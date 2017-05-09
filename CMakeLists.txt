@@ -36,9 +36,16 @@ set(INC_DIR "include")
 
 set(SRC_FILES
 	"${SRC_DIR}/main.cpp"
+	"${SRC_DIR}/basic_vp_tree.cpp"
+	"${SRC_DIR}/omp_vp_tree.cpp"
+	"${SRC_DIR}/async_vp_tree.cpp"
 	)
 
 set(INC_FILES
+	"${INC_DIR}/types.hpp"
+	"${INC_DIR}/basic_vp_tree.hpp"
+	"${INC_DIR}/omp_vp_tree.hpp"
+	"${INC_DIR}/async_vp_tree.hpp"
 	)
 
 add_executable(vp_tree_benchmarks
