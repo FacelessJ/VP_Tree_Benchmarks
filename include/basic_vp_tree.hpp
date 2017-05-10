@@ -88,12 +88,35 @@ namespace vp_basic
 			dist = heap.top().dist;
 		}
 
+		void batch_find_kth_neighbour(const std::vector<T>& queries, int k, std::vector<T>& results,
+									  std::vector<double>& dists)
+		{
+			results.resize(queries.size());
+			dists.resize(queries.size());
+
+			const auto num = queries.size();
+			for(size_t i = 0; i < num; ++i) {
+				find_kth_neighbour(queries[i], k, results[i], dists[i]);
+			}
+		}
+
 		/**
 		 * Return count of how many points exist within dist of target point
 		 */
 		size_t fr_count(const T& target, double dist)
 		{
 			return fr_count_impl(rootIdx, target, dist);
+		}
+
+		std::vector<size_t> batch_fr_count(const std::vector<T>& queries,
+													 const std::vector<double>& dists)
+		{
+			const auto num = queries.size();
+			std::vector<size_t> ret(num);
+
+			for(size_t i = 0; i < num; ++i) {
+				ret[i] = fr_count(queries[i], dists[i]);
+			}
 		}
 
 	private:

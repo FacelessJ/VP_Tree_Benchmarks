@@ -55,11 +55,30 @@ int main()
 			}
 		}
 
+		std::vector<Point> kth_neighbours2(NUM_ELEMENTS);
+		std::vector<double> dist_to_kth_neighbour2(NUM_ELEMENTS);
+
+		{
+			ScopeTimer t("Dists2");
+			basicTree.batch_find_kth_neighbour(data, k, kth_neighbours2, dist_to_kth_neighbour2);
+		}
+
+		for(size_t i = 0; i < NUM_ELEMENTS; ++i) {
+			if(std::abs(dist_to_kth_neighbour[i] - dist_to_kth_neighbour2[i]) > 0.00001) {
+				std::cout << "Diff\n";
+			}
+		}
+		
+
 		{
 			ScopeTimer t("Count");
 			for(size_t i = 0; i < NUM_ELEMENTS; ++i) {
 				auto count1 = basicTree.fr_count(data[i], dist_to_kth_neighbour[i]);
 			}
+		}
+		{
+			ScopeTimer t("Count2");
+			auto count2 = basicTree.batch_fr_count(data, dist_to_kth_neighbour);
 		}
 	}
 	system("pause");
