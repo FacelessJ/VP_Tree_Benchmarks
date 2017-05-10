@@ -16,25 +16,7 @@
 
 namespace vp_basic
 {
-	template <typename T>
-	double VDistance(const T &a, const T &b)
-	{
-		double total = 0.;
-		for(size_t i = 0; i < 2; ++i) {
-			total += (b.coords[i] - a.coords[i]) * (b.coords[i] - a.coords[i]);
-		}
-		return sqrt(total);
-	}
-
-	template <typename T>
-	double VMaxNorm(const T &a, const T &b)
-	{
-		double maxVal = 0.;
-		for(size_t i = 0; i < vp_detail::DIM; ++i) {
-			maxVal = std::max(maxVal, std::abs(b.coords[i] - a.coords[i]));
-		}
-		return maxVal;
-	}
+	
 
 	/**
 	 * Basic single-core implementation of Vantage Point trees.
@@ -71,30 +53,30 @@ namespace vp_basic
 		 * Find the k nearest points to target and return them and their distances
 		 */
 		void find_knn(const T& target, int k, std::vector<T>* results,
-					std::vector<double>* distances)
+					std::vector<double>* dists)
 		{
 			std::priority_queue<HeapItem> heap;
 
 			tau = std::numeric_limits<double>::max();
 			find_knn_impl(rootIdx, target, k, heap);
 
-			results->clear(); distances->clear();
+			results->clear(); dists->clear();
 
 			while(!heap.empty()) {
 				results->push_back((*items)[heap.top().index]);
-				distances->push_back(heap.top().dist);
+				dists->push_back(heap.top().dist);
 				heap.pop();
 			}
 
 			std::reverse(results->begin(), results->end());
-			std::reverse(distances->begin(), distances->end());
+			std::reverse(dists->begin(), dists->end());
 		}
 
 		/**
 		* Find the kth nearest point to target and return it and its distances
 		*/
 		void find_kth_neighbour(const T& target, int k, T& kth_neighbour,
-								double& distance)
+								double& dist)
 		{
 			std::priority_queue<HeapItem> heap;
 
@@ -102,7 +84,7 @@ namespace vp_basic
 			find_knn_impl(rootIdx, target, k, heap);
 
 			kth_neighbour = (*items)[heap.top().index];
-			distance = heap.top().dist;
+			dist = heap.top().dist;
 		}
 
 		/**

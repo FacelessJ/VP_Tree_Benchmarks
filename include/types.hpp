@@ -19,4 +19,24 @@ namespace vp_detail
 	{
 		double coords[DIM];
 	};
+
+	template <typename T>
+	double EuclideanDist(const T &a, const T &b)
+	{
+		double total = 0.;
+		for(size_t i = 0; i < DIM; ++i) {
+			total += (b.coords[i] - a.coords[i]) * (b.coords[i] - a.coords[i]);
+		}
+		return sqrt(total);
+	}
+
+	template <typename T>
+	double MaxNormDist(const T &a, const T &b)
+	{
+		double maxVal = 0.;
+		for(size_t i = 0; i < DIM; ++i) {
+			maxVal = std::max(maxVal, std::abs(b.coords[i] - a.coords[i]));
+		}
+		return maxVal;
+	}
 }

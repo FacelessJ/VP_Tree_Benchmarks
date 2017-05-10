@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "../include/basic_vp_tree.hpp"
+#include "../include/brute_force.hpp"
 #include "../include/types.hpp"
 
 #include <vector>
@@ -14,7 +15,7 @@ int main()
 	constexpr int k = 6;
 	{
 		using Point = vp_detail::Point;
-		using VPTree = vp_basic::VpTree<Point, vp_basic::VMaxNorm<Point>>;
+		using VPTree = vp_basic::VpTree<Point, vp_detail::MaxNormDist<Point>>;
 
 		std::uniform_real_distribution<double> distribution(0, 100);
 		std::default_random_engine generator;
@@ -32,6 +33,8 @@ int main()
 		// Create tree
 		VPTree basicTree;
 		basicTree.create(data);
+
+		brute_force::fr_count<Point, vp_detail::MaxNormDist<Point>>(data, 0, 2.0);
 
 		// find all knn for each point
 		std::vector<Point> results;
