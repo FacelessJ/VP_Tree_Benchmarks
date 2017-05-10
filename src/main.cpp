@@ -27,7 +27,7 @@ int main()
 		{
 			//std::cout << "Generating" << std::endl;
 			//ScopeTimer t("Generate");
-			std::generate_n(std::back_inserter(data), NUM_ELEMENTS, [distribution, &generator]() {
+			std::generate_n(std::back_inserter(data), NUM_ELEMENTS, [&distribution, &generator]() {
 				Point tmp;
 				for(int i = 0; i < vp_detail::DIM; ++i)
 					tmp.coords[i] = distribution(generator);

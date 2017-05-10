@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 
 namespace vp_detail
 {
@@ -27,7 +28,7 @@ namespace vp_detail
 		for(size_t i = 0; i < DIM; ++i) {
 			total += (b.coords[i] - a.coords[i]) * (b.coords[i] - a.coords[i]);
 		}
-		return sqrt(total);
+		return std::sqrt(total);
 	}
 
 	template <typename T>

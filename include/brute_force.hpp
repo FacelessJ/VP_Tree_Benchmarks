@@ -10,7 +10,7 @@ namespace brute_force
 	template<typename Point, double(*Distance)(const Point&, const Point&)>
 	void brutedistk(const std::vector<Point>& dataPts, int const point, int const k, Point& result, double& dist) {
 		std::priority_queue<std::pair<double, int> > knn;
-		knn.push(std::pair<double, int>(DBL_MAX, -1));
+		knn.push(std::pair<double, int>(std::numeric_limits<double>::max(), -1));
 
 		//int closestIdx = -1;
 		const auto numPts = dataPts.size();
