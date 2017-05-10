@@ -36,20 +36,35 @@ namespace vp_basic
 		return maxVal;
 	}
 
+	/**
+	 * Basic single-core implementation of Vantage Point trees.
+	 * Will perform knn_search and fixed_radius search.
+	 * Tree is created from points (point vector is shuffled to accomodate
+	 * tree). No mapping of new location to original location
+	 * is kept. Thus this data structure is best used for
+	 * types where order doesn't matter (i.e indistinguishable particles,
+	 * where we just need to know the average distance to kth nearest neighbour,
+	 * etc)
+	 */
 	template<typename T, double(*distance)(const T&, const T&)>
 	class VpTree
 	{
 	public:
-		VpTree() : _root(0) {}
+		
+		VpTree() : items(nullptr), tau(std::numeric_limits<double>::max()), rootIdx(-1) { }
 
 		~VpTree() {
-			delete _root;
 		}
 
-		void create(const std::vector<T>& items) {
-			delete _root;
-			_items = items;
-			_root = buildFromPoints(0, items.size());
+		/**
+		 * Creates a VP tree using data specified in new_items.
+		 * Tree is created in_place, that is, new_items is mutated,
+		 * and no record is kept of original indices.
+		 */
+		void create(std::vector<T>& new_items) {
+			items = &new_items;
+			nodes.reserve(items->size());
+			rootIdx = buildFromPoints(0, items->size());
 		}
 
 		void find_knn(const T& target, int k, std::vector<T>* results,
@@ -57,13 +72,13 @@ namespace vp_basic
 		{
 			std::priority_queue<HeapItem> heap;
 
-			_tau = std::numeric_limits<double>::max();
-			find_knn_impl(_root, target, k, heap);
+			tau = std::numeric_limits<double>::max();
+			find_knn_impl(rootIdx, target, k, heap);
 
 			results->clear(); distances->clear();
 
 			while(!heap.empty()) {
-				results->push_back(_items[heap.top().index]);
+				results->push_back((*items)[heap.top().index]);
 				distances->push_back(heap.top().dist);
 				heap.pop();
 			}
@@ -77,32 +92,26 @@ namespace vp_basic
 		{
 			std::priority_queue<HeapItem> heap;
 
-			_tau = std::numeric_limits<int>::max();
-			find_knn_impl(_root, target, k, heap);
+			tau = std::numeric_limits<double>::max();
+			find_knn_impl(rootIdx, target, k, heap);
 
-			kth_neighbour = _items[heap.top().index];
+			kth_neighbour = (*items)[heap.top().index];
 			distance = heap.top().dist;
 		}
 
 	private:
-		std::vector<T> _items;
-		double _tau;
+		std::vector<T>* items;
+		double tau;
 
 		struct Node
 		{
-			int index;
 			double threshold;
-			Node* left;
-			Node* right;
-
-			Node() :
-				index(0), threshold(0.), left(0), right(0) {}
-
-			~Node() {
-				delete left;
-				delete right;
-			}
-		}*_root;
+			int left;
+			int right;
+		};
+		size_t rootIdx;
+		
+		std::vector<Node> nodes;
 
 		struct HeapItem {
 			HeapItem(int index, double dist) :
@@ -123,14 +132,16 @@ namespace vp_basic
 			}
 		};
 
-		Node* buildFromPoints(int lower, int upper)
+		size_t buildFromPoints(int lower, int upper)
 		{
+			static_assert(std::is_pod<Node>::value, "Node isn't POD");
 			if(upper == lower) {
-				return NULL;
+				return -1;
 			}
 
-			Node* node = new Node();
-			node->index = lower;
+			auto nodeId = nodes.size();
+			//auto nodeDefaultData = { 0., lower, -1, -1 };
+			nodes.push_back(Node{ 0., -1, -1 });
 
 			if(upper - lower > 1) {
 
@@ -138,88 +149,64 @@ namespace vp_basic
 				double m = (double)rand() / RAND_MAX;
 				m = 0.5;
 				int i = (int)(m * (upper - lower - 1)) + lower;
-				std::swap(_items[lower], _items[i]);
+				std::swap((*items)[lower], (*items)[i]);
 
 				int median = (upper + lower) / 2;
 
 				// partitian around the median distance
 				std::nth_element(
-					_items.begin() + lower + 1,
-					_items.begin() + median,
-					_items.begin() + upper,
-					DistanceComparator(_items[lower]));
+					items->begin() + lower + 1,
+					items->begin() + median,
+					items->begin() + upper,
+					DistanceComparator((*items)[lower]));
 
 				// what was the median?
-				node->threshold = distance(_items[lower], _items[median]);
+				nodes[nodeId].threshold = distance((*items)[lower], (*items)[median]);
 
-				node->index = lower;
-				node->left = buildFromPoints(lower + 1, median);
-				node->right = buildFromPoints(median, upper);
+				nodes[nodeId].left = buildFromPoints(lower + 1, median);
+				nodes[nodeId].right = buildFromPoints(median, upper);
 			}
 
-			return node;
+			return nodeId;
 		}
 
-		void find_knn_impl(Node* node, const T& target, int k,
+		void find_knn_impl(size_t node, const T& target, int k,
 					std::priority_queue<HeapItem>& heap)
 		{
-			if(node == NULL) return;
+			if(node == -1) return;
 
-			double dist = distance(_items[node->index], target);
-			//printf("dist=%g tau=%gn", dist, _tau );
+			double dist = distance((*items)[node], target);
+			//printf("dist=%g tau=%gn", dist, tau );
 
-			if(dist < _tau) {
+			if(dist < tau) {
 				if(heap.size() == k) heap.pop();
-				heap.push(HeapItem(node->index, dist));
-				if(heap.size() == k) _tau = heap.top().dist;
+				heap.push(HeapItem(node, dist));
+				if(heap.size() == k) tau = heap.top().dist;
 			}
 
-			if(node->left == NULL && node->right == NULL) {
+			if(nodes[node].left == -1 && nodes[node].right == -1) {
 				return;
 			}
 
-			if(dist < node->threshold) {
-				if(dist - _tau <= node->threshold) {
-					find_knn_impl(node->left, target, k, heap);
+			if(dist < nodes[node].threshold) {
+				if(dist - tau <= nodes[node].threshold) {
+					find_knn_impl(nodes[node].left, target, k, heap);
 				}
 
-				if(dist + _tau >= node->threshold) {
-					find_knn_impl(node->right, target, k, heap);
+				if(dist + tau >= nodes[node].threshold) {
+					find_knn_impl(nodes[node].right, target, k, heap);
 				}
 
 			}
 			else {
-				if(dist + _tau >= node->threshold) {
-					find_knn_impl(node->right, target, k, heap);
+				if(dist + tau >= nodes[node].threshold) {
+					find_knn_impl(nodes[node].right, target, k, heap);
 				}
 
-				if(dist - _tau <= node->threshold) {
-					find_knn_impl(node->left, target, k, heap);
+				if(dist - tau <= nodes[node].threshold) {
+					find_knn_impl(nodes[node].left, target, k, heap);
 				}
 			}
-		}
-	public:
-		void printTree()
-		{
-			FILE* fp = fopen("cpu_tree.txt", "w");
-			std::queue<Node*> nodes_to_print;
-			nodes_to_print.push(_root);
-			while(nodes_to_print.empty() == false) {
-				Node* currNode = nodes_to_print.front();
-				nodes_to_print.pop();
-				int leftIndex = -1;
-				if(currNode->left != 0)
-					leftIndex = currNode->left->index;
-				int rightIndex = -1;
-				if(currNode->right != 0)
-					rightIndex = currNode->right->index;
-				fprintf(fp, "%d: %d %d: %f\n", currNode->index, leftIndex, rightIndex, currNode->threshold);
-				if(currNode->left != 0)
-					nodes_to_print.push(currNode->left);
-				if(currNode->right != 0)
-					nodes_to_print.push(currNode->right);
-			}
-			fclose(fp);
 		}
 	};
 }
