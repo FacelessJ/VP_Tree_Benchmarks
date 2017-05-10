@@ -33,25 +33,36 @@ int main()
 		// Create tree
 		VPTree basicTree;
 		basicTree.create(data);
+		std::cout << "Tree created\n";
 
 		brute_force::fr_count<Point, vp_detail::MaxNormDist<Point>>(data, 0, 2.0);
 
-		// find all knn for each point
-		std::vector<Point> results;
-		std::vector<double> dists;
-		for(auto& pt : data) {
-			basicTree.find_knn(pt, k, &results, &dists);
-			// do something with results
-		}
-
 		// find kth neighbour for each point
 		Point kth_neighbour;
-		double dist_to_kth_neighbour;
-		for(auto& pt : data) {
-			basicTree.find_kth_neighbour(pt, k, kth_neighbour, dist_to_kth_neighbour);
+		double dist_to_kth_neighbour[NUM_ELEMENTS];
+
+		Point kth_neighbour_bf;
+		double dist_to_kth_neighbour_bf;
+		for(size_t i = 0; i < NUM_ELEMENTS; ++i) {
+			basicTree.find_kth_neighbour(data[i], k, kth_neighbour, dist_to_kth_neighbour[i]);
+			//brute_force::find_kth_neighbour<Point, vp_detail::MaxNormDist<Point>>(data, i, k-1, kth_neighbour_bf, dist_to_kth_neighbour_bf);
 			// do something with results
-			std::cout << "Distance: " << dist_to_kth_neighbour << "\n";
+			//if(vp_detail::EuclideanDist<Point>(kth_neighbour, kth_neighbour_bf) > 0.000001)
+			//{
+			//	std::cout << "Diff for " << i << "\n";
+			//}
 		}
+		std::cout << "Dists found\n";
+
+		for(size_t i = 0; i < NUM_ELEMENTS; ++i) {
+			auto count1 = basicTree.fr_count(data[i], dist_to_kth_neighbour[i]+1);
+			/*auto count2 = brute_force::fr_count<Point, vp_detail::MaxNormDist<Point>>(data, i, dist_to_kth_neighbour[i]+1);
+			if(count1 != count2) {
+				std::cout << "Count diff for " << i << "\n";
+			}*/
+		}
+		std::cout << "Counts found\n";
+		int a = 5;
 	}
 
 	return 0;

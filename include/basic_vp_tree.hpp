@@ -13,6 +13,7 @@
 #include <queue>
 #include <limits>
 #include <cmath>
+#include <stack>
 
 namespace vp_basic
 {
@@ -219,11 +220,10 @@ namespace vp_basic
 
 			while(workingSet.empty() == false || currNode != -1) {
 				if(currNode != -1) {
-					//Node* currNodePtr = &(nodes[currNode]);
-					double dist = distance((*_items)[currNode], target, L);
+					double dist = distance((*items)[currNode], target);
 
 					count += (dist < max_dist);
-					if(currNodePtr->left == -1 && currNodePtr->right == -1) {
+					if(nodes[currNode].left == -1 && nodes[currNode].right == -1) {
 						currNode = -1;
 						//continue;
 					}
