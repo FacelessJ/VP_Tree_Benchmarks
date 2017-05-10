@@ -40,6 +40,7 @@ set(SRC_FILES
 	"${SRC_DIR}/omp_vp_tree.cpp"
 	"${SRC_DIR}/async_vp_tree.cpp"
 	"${SRC_DIR}/brute_force.cpp"
+	"${SRC_DIR}/timing.cpp"
 	)
 
 set(INC_FILES
@@ -48,6 +49,7 @@ set(INC_FILES
 	"${INC_DIR}/omp_vp_tree.hpp"
 	"${INC_DIR}/async_vp_tree.hpp"
 	"${INC_DIR}/brute_force.hpp"
+	"${INC_DIR}/timing.hpp"
 	)
 
 add_executable(vp_tree_benchmarks
