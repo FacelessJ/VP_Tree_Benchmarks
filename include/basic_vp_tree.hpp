@@ -67,6 +67,9 @@ namespace vp_basic
 			rootIdx = buildFromPoints(0, items->size());
 		}
 
+		/**
+		 * Find the k nearest points to target and return them and their distances
+		 */
 		void find_knn(const T& target, int k, std::vector<T>* results,
 					std::vector<double>* distances)
 		{
@@ -87,6 +90,9 @@ namespace vp_basic
 			std::reverse(distances->begin(), distances->end());
 		}
 
+		/**
+		* Find the kth nearest point to target and return it and its distances
+		*/
 		void find_kth_neighbour(const T& target, int k, T& kth_neighbour,
 								double& distance)
 		{
@@ -97,6 +103,14 @@ namespace vp_basic
 
 			kth_neighbour = (*items)[heap.top().index];
 			distance = heap.top().dist;
+		}
+
+		/**
+		 * Return count of how many points exist within dist of target point
+		 */
+		size_t fr_count(const T& target, double dist)
+		{
+			return fr_count_impl(rootIdx, target, dist);
 		}
 
 	private:
@@ -188,6 +202,9 @@ namespace vp_basic
 				return;
 			}
 
+			/**
+			 * Pick the more likely child first
+			 */
 			if(dist < nodes[node].threshold) {
 				if(dist - tau <= nodes[node].threshold) {
 					find_knn_impl(nodes[node].left, target, k, heap);
@@ -207,6 +224,50 @@ namespace vp_basic
 					find_knn_impl(nodes[node].left, target, k, heap);
 				}
 			}
+		}
+
+		size_t fr_count_impl(size_t nodeId, const T& target, double max_dist)
+		{
+			if(nodeId == -1) return 0;
+
+			std::stack<int> workingSet;
+			int currNode = -1;
+			workingSet.push(nodeId);
+			size_t count = 0;
+
+			while(workingSet.empty() == false || currNode != -1) {
+				if(currNode != -1) {
+					//Node* currNodePtr = &(nodes[currNode]);
+					double dist = distance((*_items)[currNode], target, L);
+
+					count += (dist < max_dist);
+					if(currNodePtr->left == -1 && currNodePtr->right == -1) {
+						currNode = -1;
+						//continue;
+					}
+					else {
+						// Pick the more likely child first
+						if(dist < nodes[currNode].threshold) {
+							if((dist - max_dist <= nodes[currNode].threshold))
+								workingSet.push(nodes[currNode].left);
+							if((dist + max_dist >= nodes[currNode].threshold))
+								workingSet.push(nodes[currNode].right);
+						}
+						else {
+							if((dist + max_dist >= nodes[currNode].threshold))
+								workingSet.push(nodes[currNode].right);
+							if((dist - max_dist <= nodes[currNode].threshold))
+								workingSet.push(nodes[currNode].left);
+						}
+					}
+				}
+				if(workingSet.empty() == false) {
+					currNode = workingSet.top();
+					workingSet.pop();
+				}
+			}
+
+			return count;
 		}
 	};
 }
