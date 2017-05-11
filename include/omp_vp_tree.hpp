@@ -14,6 +14,7 @@
 #include <limits>
 #include <cmath>
 #include <stack>
+#include <omp.h>
 
 namespace vp_omp
 {
@@ -53,7 +54,7 @@ namespace vp_omp
 		/**
 		* Find the k nearest points to target and return them and their distances
 		*/
-		void find_knn(const T& target, int k, std::vector<T>* results,
+		void find_knn(const T& target, const int k, std::vector<T>* results,
 					  std::vector<double>* dists)
 		{
 			std::priority_queue<HeapItem> heap;
@@ -76,8 +77,8 @@ namespace vp_omp
 		/**
 		* Find the kth nearest point to target and return it and its distances
 		*/
-		void find_kth_neighbour(const T& target, int k, T& kth_neighbour,
-								double& dist)
+		void find_kth_neighbour(const T& target, const int k, T& kth_neighbour,
+								double& dist) const
 		{
 			std::priority_queue<HeapItem> heap;
 
@@ -88,14 +89,15 @@ namespace vp_omp
 			dist = heap.top().dist;
 		}
 
-		void batch_find_kth_neighbour(const std::vector<T>& queries, int k, std::vector<T>& results,
+		void batch_find_kth_neighbour(const std::vector<T>& queries, const int k, std::vector<T>& results,
 									  std::vector<double>& dists)
 		{
 			results.resize(queries.size());
 			dists.resize(queries.size());
 
-			const auto num = queries.size();
-			for(size_t i = 0; i < num; ++i) {
+			const auto num = static_cast<int>(queries.size());
+#pragma omp parallel for
+			for(auto i = 0; i < num; ++i) {
 				find_kth_neighbour(queries[i], k, results[i], dists[i]);
 			}
 		}
@@ -103,7 +105,7 @@ namespace vp_omp
 		/**
 		* Return count of how many points exist within dist of target point
 		*/
-		size_t fr_count(const T& target, double dist)
+		size_t fr_count(const T& target, const double dist) const
 		{
 			return fr_count_impl(rootIdx, target, dist);
 		}
@@ -111,11 +113,12 @@ namespace vp_omp
 		std::vector<size_t> batch_fr_count(const std::vector<T>& queries,
 										   const std::vector<double>& dists)
 		{
-			const auto num = queries.size();
+			const auto num = static_cast<int>(queries.size());
 			std::vector<size_t> ret(num);
 
-			for(size_t i = 0; i < num; ++i) {
-				ret[i] = fr_count(queries[i], dists[i]);
+#pragma omp parallel for
+				for(auto i = 0; i < num; ++i) {
+					ret[i] = fr_count(queries[i], dists[i]);
 			}
 			return ret;
 		}
@@ -190,8 +193,8 @@ namespace vp_omp
 			return nodeId;
 		}
 
-		void find_knn_impl(size_t node, const T& target, int k,
-						   std::priority_queue<HeapItem>& heap, double& tau)
+		void find_knn_impl(const size_t node, const T& target, const int k,
+						   std::priority_queue<HeapItem>& heap, double& tau) const
 		{
 			if(node == -1) return;
 
@@ -231,7 +234,7 @@ namespace vp_omp
 			}
 		}
 
-		size_t fr_count_impl(size_t nodeId, const T& target, double max_dist)
+		size_t fr_count_impl(size_t nodeId, const T& target, const double max_dist) const
 		{
 			if(nodeId == -1) return 0;
 

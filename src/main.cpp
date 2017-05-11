@@ -8,12 +8,13 @@
 
 #include <vector>
 #include <random>
+#include <omp.h>
 
 int main()
 {
-	std::cout << "Hello, world!" << std::endl;
+	std::cout << "Hello, world! " << omp_get_max_threads() << " threads" << std::endl;
 
-	constexpr size_t NUM_ELEMENTS = 100000;
+	constexpr size_t NUM_ELEMENTS = 10000000;
 	constexpr int k = 6;
 	{
 		using Point = vp_detail::Point;
@@ -63,13 +64,6 @@ int main()
 			ScopeTimer t("Dists Batch");
 			basicTree.batch_find_kth_neighbour(data, k, kth_neighbours2, dist_to_kth_neighbour2);
 		}
-
-		for(size_t i = 0; i < NUM_ELEMENTS; ++i) {
-			if(std::abs(dist_to_kth_neighbour[i] - dist_to_kth_neighbour2[i]) > 0.00001) {
-				std::cout << "Diff\n";
-			}
-		}
-		
 
 		{
 			ScopeTimer t("Count");
