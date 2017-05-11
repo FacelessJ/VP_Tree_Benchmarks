@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "../include/basic_vp_tree.hpp"
+#include "../include/omp_vp_tree.hpp"
 #include "../include/brute_force.hpp"
 #include "../include/types.hpp"
 #include "../include/timing.hpp"
@@ -12,11 +13,11 @@ int main()
 {
 	std::cout << "Hello, world!" << std::endl;
 
-	constexpr size_t NUM_ELEMENTS = 1000000;
+	constexpr size_t NUM_ELEMENTS = 100000;
 	constexpr int k = 6;
 	{
 		using Point = vp_detail::Point;
-		using VPTree = vp_basic::VpTree<Point, vp_detail::MaxNormDist<Point>>;
+		using VPTree = vp_omp::VpTree<Point, vp_detail::MaxNormDist<Point>>;
 
 		std::uniform_real_distribution<double> distribution(0, 100);
 		std::default_random_engine generator;
@@ -49,7 +50,7 @@ int main()
 		std::vector<double> dist_to_kth_neighbour(NUM_ELEMENTS);
 
 		{
-			ScopeTimer t("Dists");
+			ScopeTimer t("Dists Recursive");
 			for(size_t i = 0; i < NUM_ELEMENTS; ++i) {
 				basicTree.find_kth_neighbour(data[i], k, kth_neighbour, dist_to_kth_neighbour[i]);
 			}
@@ -59,7 +60,7 @@ int main()
 		std::vector<double> dist_to_kth_neighbour2(NUM_ELEMENTS);
 
 		{
-			ScopeTimer t("Dists2");
+			ScopeTimer t("Dists Batch");
 			basicTree.batch_find_kth_neighbour(data, k, kth_neighbours2, dist_to_kth_neighbour2);
 		}
 
@@ -77,7 +78,7 @@ int main()
 			}
 		}
 		{
-			ScopeTimer t("Count2");
+			ScopeTimer t("Count Batch");
 			auto count2 = basicTree.batch_fr_count(data, dist_to_kth_neighbour);
 		}
 	}

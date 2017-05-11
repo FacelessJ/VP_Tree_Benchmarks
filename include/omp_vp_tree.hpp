@@ -34,7 +34,7 @@ namespace vp_omp
 	{
 	public:
 
-		VpTree() : items(nullptr), tau(std::numeric_limits<double>::max()), rootIdx(-1) { }
+		VpTree() : items(nullptr), rootIdx(-1) { }
 
 		~VpTree() {
 		}
@@ -58,8 +58,8 @@ namespace vp_omp
 		{
 			std::priority_queue<HeapItem> heap;
 
-			tau = std::numeric_limits<double>::max();
-			find_knn_impl(rootIdx, target, k, heap);
+			double tau = std::numeric_limits<double>::max();
+			find_knn_impl(rootIdx, target, k, heap, tau);
 
 			results->clear(); dists->clear();
 
@@ -81,8 +81,8 @@ namespace vp_omp
 		{
 			std::priority_queue<HeapItem> heap;
 
-			tau = std::numeric_limits<double>::max();
-			find_knn_impl(rootIdx, target, k, heap);
+			double tau = std::numeric_limits<double>::max();
+			find_knn_impl(rootIdx, target, k, heap, tau);
 
 			kth_neighbour = (*items)[heap.top().index];
 			dist = heap.top().dist;
@@ -117,11 +117,11 @@ namespace vp_omp
 			for(size_t i = 0; i < num; ++i) {
 				ret[i] = fr_count(queries[i], dists[i]);
 			}
+			return ret;
 		}
 
 	private:
 		std::vector<T>* items;
-		double tau;
 
 		struct Node
 		{
@@ -191,12 +191,11 @@ namespace vp_omp
 		}
 
 		void find_knn_impl(size_t node, const T& target, int k,
-						   std::priority_queue<HeapItem>& heap)
+						   std::priority_queue<HeapItem>& heap, double& tau)
 		{
 			if(node == -1) return;
 
 			double dist = distance((*items)[node], target);
-			//printf("dist=%g tau=%gn", dist, tau );
 
 			if(dist < tau) {
 				if(heap.size() == k) heap.pop();
@@ -213,21 +212,21 @@ namespace vp_omp
 			*/
 			if(dist < nodes[node].threshold) {
 				if(dist - tau <= nodes[node].threshold) {
-					find_knn_impl(nodes[node].left, target, k, heap);
+					find_knn_impl(nodes[node].left, target, k, heap, tau);
 				}
 
 				if(dist + tau >= nodes[node].threshold) {
-					find_knn_impl(nodes[node].right, target, k, heap);
+					find_knn_impl(nodes[node].right, target, k, heap, tau);
 				}
 
 			}
 			else {
 				if(dist + tau >= nodes[node].threshold) {
-					find_knn_impl(nodes[node].right, target, k, heap);
+					find_knn_impl(nodes[node].right, target, k, heap, tau);
 				}
 
 				if(dist - tau <= nodes[node].threshold) {
-					find_knn_impl(nodes[node].left, target, k, heap);
+					find_knn_impl(nodes[node].left, target, k, heap, tau);
 				}
 			}
 		}
